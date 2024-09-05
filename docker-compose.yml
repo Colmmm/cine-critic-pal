@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  httrack:
+    build:
+      context: ./httrack
+    volumes:
+      - scraped-site:/scraped-site
+    env_file:
+      - .env  
+    command: >
+      sh -c "httrack $LETTERBOXD_PROFILE_URL -O /scraped-site --mirror"
+    networks:
+      - webnet
+
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - scraped-site:/usr/share/nginx/html
+    networks:
+      - webnet
+
+volumes:
+  scraped-site:
+
+networks:
+  webnet:
