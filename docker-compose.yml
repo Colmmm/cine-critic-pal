@@ -1,26 +1,32 @@
-version: '3.8'
-
+version: "3.8"
 services:
   scraper:
-    build: .
-    volumes:
-      - ./scraped-pages:/app/scraped-pages  # Mount the local directory for saving HTML
+    build:
+      context: .
+      dockerfile: ./src/scraper/Dockerfile
+    container_name: cinecriticpal_scraper
     env_file:
-      - .env  # Optional: to anonymize or store user-specific information
+      - .env
     environment:
-      - BASE_URL=${LETTERBOXD_PROFILE_URL}  # Pass the URL through environment variable
-      - NUM_PAGES=3  # Number of pages to scrape
-    command: "python scraper.py"
-
+      - LETTERBOXD_USERNAME=${LETTERBOXD_USERNAME}  # Letterboxd username stored in .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command: python /app/scraper/scrape.py
+    networks:
+      - cinecriticpal_net
 
   nginx:
     build:
-      context: .
-      dockerfile: Dockerfile.nginx
+      context: ./src/server
+    container_name: cinecriticpal_nginx
     ports:
       - "8080:80"
     volumes:
-      - ./scraped-pages:/usr/share/nginx/html
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - scraper
+      - ./data/html:/usr/share/nginx/html
+    networks:
+      - cinecriticpal_net
+
+networks:
+  cinecriticpal_net:
+    driver: bridge
