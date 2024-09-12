@@ -1,35 +1,40 @@
+# Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Install system dependencies required by Playwright
+# Set the working directory in the container
+WORKDIR /app
+
+# Install system dependencies for Playwright and other packages
 RUN apt-get update && apt-get install -y \
+    wget \
     libnss3 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
     libcups2 \
     libxcomposite1 \
     libxrandr2 \
-    libxdamage1 \
-    libxkbcommon0 \
     libgbm1 \
-    libpango1.0-0 \
     libgtk-3-0 \
-    wget \
+    libxdamage1 \
     libasound2 \
-    libnspr4
+    libpangocairo-1.0-0 \
+    libpango-1.0-0 \
+    libffi-dev \
+    libgdk-pixbuf2.0-0 \
+    && apt-get clean
 
-# Set the working directory
-WORKDIR /app
+# Copy only the requirements file to leverage caching
+COPY ./src/scraper/requirements.txt /app/
 
-# Copy the scraper dir to app 
-COPY src/scraper/ /app/scraper
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies
-#RUN pip install --no-cache-dir -r scraper/requirements.txt
-RUN pip install -r scraper/requirements.txt
+# Install Playwright and browsers (Chromium)
+RUN pip install playwright \
+    && playwright install --with-deps chromium  # Install Chromium with dependencies
 
-# Install Playwright browsers
-RUN playwright install --with-deps
+# Copy the rest of the application code
+COPY ./src/scraper /app/scraper
 
-# Set the entry point for the scraper
-ENTRYPOINT ["python", "/app/scraper/scrape.py"]
-
+# Set the default command to run the scraper
+CMD ["python", "/app/scraper/scrape.py"]
