@@ -1,13 +1,12 @@
 import os
-import re
 from urllib.parse import urljoin, urlparse
 from playwright.sync_api import sync_playwright, TimeoutError
 
 USERNAME = os.getenv("LETTERBOXD_USERNAME", "default_username")
 
 BASE_DIR = 'data/html'
-REVIEW_PAGES_URL = f"https://letterboxd.com/{USERNAME}/films/reviews/page/"
-NUMBER_OF_PAGES = 3  # Adjust based on the number of review pages you want to scrape
+REVIEW_PAGES_URL = f"https://letterboxd.com/{USERNAME}/films/reviews/"
+NUMBER_OF_PAGES = 2  # Adjust based on the number of review pages you want to scrape
 
 # Helper function to save HTML content to a specific path
 def save_html(content, save_path):
@@ -17,35 +16,19 @@ def save_html(content, save_path):
 
 # Updated function to handle the consent popup
 def handle_consent_popup(page):
-    # Selectors for the popup and buttons
-    consent_popup_selector = 'body > div.fc-consent-root.__web-inspector-hide-shortcut__'
-    consent_button_selector = 'body > div.fc-consent-root.__web-inspector-hide-shortcut__ > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-do-not-consent.fc-secondary-button'
+    consent_popup_selector = 'body > div.fc-consent-root > div.fc-dialog-container'
+    consent_button_selector = '.fc-footer-buttons .fc-button.fc-cta-consent'
 
     try:
-        # Wait for the popup
+        # Wait for the consent popup and click the 'Consent' button
         page.wait_for_selector(consent_popup_selector, timeout=10000)
-        
-        # Option 1: Try to click the 'Do not consent' button
-        try:
-            consent_button = page.query_selector(consent_button_selector)
-            if consent_button:
-                consent_button.click()
-                page.wait_for_load_state('networkidle')
-                print("Consent dismissed.")
-        except TimeoutError:
-            print("No consent button found or timeout on clicking.")
-        
-        # Option 2: Remove the popup directly if clicking doesn't work
-        try:
-            popup = page.query_selector(consent_popup_selector)
-            if popup:
-                popup.evaluate("el => el.remove()")  # Remove the popup
-                print("Popup removed.")
-        except Exception as e:
-            print(f"Error removing popup: {e}")
-            
+        consent_button = page.query_selector(consent_button_selector)
+        if consent_button:
+            consent_button.click()
+            page.wait_for_load_state('networkidle')
+            print("Consent button clicked.")
     except TimeoutError:
-        print("No consent popup found or timeout.")
+        print("No consent popup found or timed out.")
 
 def clone_letterboxd():
     os.makedirs(BASE_DIR, exist_ok=True)
@@ -57,15 +40,23 @@ def clone_letterboxd():
 
         # Scrape review page URLs
         for i in range(1, NUMBER_OF_PAGES + 1):
-            review_page_url = f"{REVIEW_PAGES_URL}{i}/"
+            if i == 1:
+                review_page_url = REVIEW_PAGES_URL
+            else:
+                review_page_url = f"{REVIEW_PAGES_URL}page/{i}/"
+            
             print(f"Cloning review page: {review_page_url}")
             page.goto(review_page_url)
-            handle_consent_popup(page)
+            #handle_consent_popup(page)
             page.wait_for_load_state('networkidle')
 
             # Save review page HTML
+            if i == 1:
+                save_path = os.path.join(BASE_DIR, 'films', 'reviews', 'index.html')
+            else:
+                save_path = os.path.join(BASE_DIR, 'films', 'reviews', 'page', str(i), 'index.html')
+                
             html_content = page.content()
-            save_path = os.path.join(BASE_DIR, 'films', 'reviews', f'page_{i}', 'index.html')
             save_html(html_content, save_path)
             print(f"HTML saved: {save_path}")
 
@@ -84,9 +75,8 @@ def clone_letterboxd():
             print(f"Cloning individual review page: {review_url}")
             try:
                 page.goto(review_url)
-                handle_consent_popup(page)
+                #handle_consent_popup(page)
                 page.wait_for_load_state('networkidle')
-                handle_consent_popup(page)
 
                 # Save individual review page HTML
                 html_content = page.content()
