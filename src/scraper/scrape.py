@@ -37,7 +37,7 @@ def clone_letterboxd():
             review_links = page.query_selector_all('a')
             for link in review_links:
                 href = link.get_attribute('href')
-                if href and '/film/' in href:
+                if href and f'/{USERNAME}/film/' in href:
                     full_url = urljoin(review_page_url, href)
                     if full_url not in visited_urls:
                         visited_urls.add(full_url)
