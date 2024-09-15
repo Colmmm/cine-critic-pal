@@ -13,6 +13,18 @@ def save_html(content, save_path):
     with open(save_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
+
+def scroll_page(page):
+    # Scroll down the page in increments to trigger lazy-loaded content
+    last_height = page.evaluate('document.body.scrollHeight')
+    while True:
+        page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+        page.wait_for_timeout(1000)  # Wait for new content to load
+        new_height = page.evaluate('document.body.scrollHeight')
+        if new_height == last_height:
+            break
+        last_height = new_height
+
 def clone_letterboxd():
     os.makedirs(BASE_DIR, exist_ok=True)
     visited_urls = set()  # To track visited URLs
@@ -27,6 +39,9 @@ def clone_letterboxd():
             print(f"Cloning review page: {review_page_url}")
             page.goto(review_page_url)
             page.wait_for_load_state('networkidle')
+
+            # Scroll to trigger lazy loading
+            scroll_page(page)
 
             # Save review page HTML
             save_path = os.path.join(BASE_DIR, USERNAME, 'films', 'reviews') if i == 1 else os.path.join(BASE_DIR, USERNAME, 'films', 'reviews', 'page', str(i))
