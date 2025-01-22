@@ -22,3 +22,7 @@ terraform.tfstate*
 
 # Ignore temporary files
 *.tmp
+
+# SAM
+.aws-sam/
+samconfig.toml

@@ -1,0 +1,32 @@
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 1024
+
+Resources:
+  SentimentAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      DockerContext: .
+      Dockerfile: Dockerfile
+      DockerBuildArgs:
+        LAMBDA_TASK_ROOT: /var/task
+    Properties:
+      PackageType: Image
+      Environment:
+        Variables:
+          MODEL_PATH: model/
+      Events:
+        PredictAPI:
+          Type: Api
+          Properties:
+            Path: /predict
+            Method: post
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    Description: Stage for the API Gateway deployment

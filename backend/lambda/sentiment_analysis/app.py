@@ -23,9 +23,9 @@ def create_response(status_code, body):
     """Create a standardized API response"""
     return {
         'statusCode': status_code,
-        'body': json.dumps(body),
+        'body': json.dumps(body, ensure_ascii=False),
         'headers': {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
             'Access-Control-Allow-Origin': '*'
         }
     }
