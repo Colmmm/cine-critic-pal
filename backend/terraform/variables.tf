@@ -9,3 +9,10 @@ variable "github_oauth_token" {
   description = "GitHub token to enable Amplify access to the repository"
   type        = string
 }
+
+# GitHub repository URL
+variable "github_repository" {
+  description = "GitHub repository URL for the frontend application"
+  type        = string
+  default     = "https://github.com/Colmmm/cine-critic-pal"
+}

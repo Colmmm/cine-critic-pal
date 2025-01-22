@@ -5,12 +5,16 @@ provider "aws" {
 
 # Lambda Function for Sentiment Analysis
 resource "aws_lambda_function" "sentiment_analysis" {
-  function_name = "sentiment_analysis"
-  runtime       = "python3.9"
-  handler       = "lambda_function.lambda_handler"
-  role          = aws_iam_role.lambda_exec.arn
-  filename      = "${path.module}/../lambda/sentiment_analysis/sentiment_analysis.zip" # Path to the Lambda ZIP containing the model
-  timeout       = 15
+  function_name    = "sentiment_analysis"
+  runtime         = "python3.9"
+  handler         = "app.lambda_handler"
+  role           = aws_iam_role.lambda_exec.arn
+  filename        = "${path.module}/../lambda/sentiment_analysis/sentiment_analysis.zip"
+  timeout         = 30
+  memory_size     = 1024
+  ephemeral_storage {
+    size = 512
+  }
 }
 
 # IAM Role for Lambda
@@ -64,7 +68,7 @@ resource "aws_apigatewayv2_stage" "default_stage" {
 # AWS Amplify for Frontend
 resource "aws_amplify_app" "frontend_app" {
   name                = "cinecriticpal-frontend"
-  repository          = "https://github.com/YourGitHubUsername/cinecriticpal" # Replace with your repo
+  repository          = var.github_repository
   oauth_token         = var.github_oauth_token
   enable_auto_branch_creation = true
 
@@ -76,4 +80,13 @@ resource "aws_amplify_app" "frontend_app" {
 resource "aws_amplify_branch" "frontend_branch" {
   app_id      = aws_amplify_app.frontend_app.id
   branch_name = "main" # Replace with your frontend branch name
+}
+
+# Lambda permission for API Gateway
+resource "aws_lambda_permission" "api_gw" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sentiment_analysis.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.sentiment_api.execution_arn}/*/*"
 }
