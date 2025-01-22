@@ -45,8 +45,6 @@ The function uses the following environment variables:
 ├── inference.py           # Model interface
 ├── requirements.txt       # Python dependencies
 ├── template.yaml         # SAM template
-├── events/              # Test events
-│   └── predict.json     # Sample event
 └── model/               # Model files
     ├── config.json
     ├── model.safetensors
