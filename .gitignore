@@ -14,3 +14,11 @@ __pycache__/
 .terraform/
 terraform.tfstate*
 *.tfvars
+
+# Ignore model weights
+*.safetensors
+*.bin
+*.tar.gz
+
+# Ignore temporary files
+*.tmp
