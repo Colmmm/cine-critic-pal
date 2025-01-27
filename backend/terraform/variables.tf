@@ -1,7 +1,28 @@
 # AWS region
 variable "aws_region" {
   description = "AWS region to deploy resources in"
-  default     = "us-east-1" # Change this to your desired default region
+  default     = "eu-west-2"
+}
+
+# ECR repository URL
+variable "ecr_repository_url" {
+  description = "ECR repository URL for the Lambda container image"
+  type        = string
+  default     = "266735815809.dkr.ecr.eu-west-2.amazonaws.com/cinecriticpal-predict-rating"
+}
+
+# ECR image tag
+variable "ecr_image_tag" {
+  description = "Tag for the Lambda container image in ECR"
+  type        = string
+  default     = "latest"
+}
+
+# Environment
+variable "environment" {
+  description = "Environment (e.g., dev, prod)"
+  type        = string
+  default     = "dev"
 }
 
 # GitHub OAuth token for Amplify

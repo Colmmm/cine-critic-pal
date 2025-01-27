@@ -3,23 +3,31 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Lambda Function for Sentiment Analysis
-resource "aws_lambda_function" "sentiment_analysis" {
-  function_name    = "sentiment_analysis"
-  runtime         = "python3.9"
-  handler         = "app.lambda_handler"
-  role           = aws_iam_role.lambda_exec.arn
-  filename        = "${path.module}/../lambda/sentiment_analysis/sentiment_analysis.zip"
-  timeout         = 30
-  memory_size     = 1024
+# Lambda Function using container image
+resource "aws_lambda_function" "predict_rating" {
+  function_name = "cinecriticpal-predict-rating"
+  role         = aws_iam_role.lambda_exec.arn
+  timeout      = 30
+  memory_size  = 1024
+  
+  package_type = "Image"
+  image_uri    = "${var.ecr_repository_url}:${var.ecr_image_tag}"
+  
   ephemeral_storage {
     size = 512
+  }
+
+  environment {
+    variables = {
+      MODEL_PATH = "model/"
+    }
   }
 }
 
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_exec" {
-  name = "lambda_exec_role"
+  name = "cinecriticpal_predict_rating_role"
+  description = "IAM role for the CineCriticPal predict rating Lambda function"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -33,12 +41,41 @@ resource "aws_iam_role" "lambda_exec" {
       }
     ]
   })
+
+  tags = {
+    Environment = var.environment
+    Project     = "CineCriticPal"
+  }
 }
 
-# Attach Basic Execution Policy to Lambda
-resource "aws_iam_role_policy_attachment" "lambda_policy" {
-  role       = aws_iam_role.lambda_exec.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+# Lambda Execution Policy
+resource "aws_iam_role_policy" "lambda_exec_policy" {
+  name = "cinecriticpal_predict_rating_policy"
+  role = aws_iam_role.lambda_exec.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+        Resource = var.ecr_repository_url
+      }
+    ]
+  })
 }
 
 # API Gateway for Lambda
@@ -47,16 +84,16 @@ resource "aws_apigatewayv2_api" "sentiment_api" {
   protocol_type = "HTTP"
 }
 
-resource "aws_apigatewayv2_integration" "sentiment_integration" {
+resource "aws_apigatewayv2_integration" "predict_rating_integration" {
   api_id           = aws_apigatewayv2_api.sentiment_api.id
   integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.sentiment_analysis.invoke_arn
+  integration_uri  = aws_lambda_function.predict_rating.invoke_arn
 }
 
 resource "aws_apigatewayv2_route" "sentiment_route" {
   api_id    = aws_apigatewayv2_api.sentiment_api.id
   route_key = "POST /predict"
-  target    = "integrations/${aws_apigatewayv2_integration.sentiment_integration.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.predict_rating_integration.id}"
 }
 
 resource "aws_apigatewayv2_stage" "default_stage" {
@@ -86,7 +123,7 @@ resource "aws_amplify_branch" "frontend_branch" {
 resource "aws_lambda_permission" "api_gw" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.sentiment_analysis.function_name
+  function_name = aws_lambda_function.predict_rating.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.sentiment_api.execution_arn}/*/*"
 }
