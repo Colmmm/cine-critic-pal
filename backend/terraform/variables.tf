@@ -8,7 +8,7 @@ variable "aws_region" {
 variable "ecr_repository_url" {
   description = "ECR repository URL for the Lambda container image"
   type        = string
-  default     = "266735815809.dkr.ecr.eu-west-2.amazonaws.com/cinecriticpal-predict-rating"
+  sensitive   = true
 }
 
 # ECR image tag

@@ -3,6 +3,19 @@ provider "aws" {
   region = var.aws_region
 }
 
+# SSM Parameter for ECR Repository URL
+resource "aws_ssm_parameter" "ecr_repository_url" {
+  name        = "/cinecriticpal/ecr_repository_url"
+  description = "ECR repository URL for the Lambda container image"
+  type        = "SecureString"
+  value       = var.ecr_repository_url
+
+  tags = {
+    Environment = var.environment
+    Project     = "CineCriticPal"
+  }
+}
+
 # Lambda Function using container image
 resource "aws_lambda_function" "predict_rating" {
   function_name = "cinecriticpal-predict-rating"
@@ -73,6 +86,13 @@ resource "aws_iam_role_policy" "lambda_exec_policy" {
           "ecr:BatchCheckLayerAvailability"
         ]
         Resource = var.ecr_repository_url
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter"
+        ]
+        Resource = aws_ssm_parameter.ecr_repository_url.arn
       }
     ]
   })
