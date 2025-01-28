@@ -4,18 +4,11 @@ variable "aws_region" {
   default     = "eu-west-2"
 }
 
-# ECR repository URL
+# ECR repository URL (including tag)
 variable "ecr_repository_url" {
-  description = "ECR repository URL for the Lambda container image"
+  description = "Full ECR repository URL with tag for the Lambda container image"
   type        = string
   sensitive   = true
-}
-
-# ECR image tag
-variable "ecr_image_tag" {
-  description = "Tag for the Lambda container image in ECR"
-  type        = string
-  default     = "latest"
 }
 
 # Environment
