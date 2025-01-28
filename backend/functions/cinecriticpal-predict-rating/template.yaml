@@ -10,7 +10,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
-      ImageUri: !Sub '{{resolve:ssm:/cinecriticpal/ecr_repository_url}}:latest'
+      ImageUri: cinecriticpal-predict-rating:latest
       Environment:
         Variables:
           MODEL_PATH: model/
