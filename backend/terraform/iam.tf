@@ -31,9 +31,13 @@ resource "aws_iam_role_policy" "api_gateway_logging" {
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents"
         ]
-        Resource = "arn:aws:logs:*:*:*"
+        Resource = "${aws_cloudwatch_log_group.api_logs.arn}:*"
       }
     ]
   })
@@ -56,6 +60,11 @@ resource "aws_iam_role" "lambda_exec" {
       }
     ]
   })
+
+  tags = {
+    Environment = var.environment
+    Project     = "CineCriticPal"
+  }
 }
 
 # Lambda Execution Policy
@@ -81,6 +90,16 @@ resource "aws_iam_role_policy" "lambda_exec_policy" {
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
           "ecr:BatchCheckLayerAvailability"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "lambda:EnableReplication*",
+          "lambda:DeleteFunction",
+          "lambda:GetFunction",
+          "lambda:GetFunctionConfiguration"
         ]
         Resource = "*"
       }
