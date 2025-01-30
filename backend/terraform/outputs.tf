@@ -1,7 +1,7 @@
 # API Gateway Endpoint
 output "api_endpoint" {
   description = "The API Gateway endpoint for the sentiment analysis function"
-  value       = aws_apigatewayv2_api.sentiment_api.api_endpoint
+  value       = "${aws_apigatewayv2_stage.default_stage.invoke_url}/predict"
 }
 
 # Amplify Frontend URL
